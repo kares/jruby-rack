@@ -1,10 +1,13 @@
 source 'http://rubygems.org'
 
-gem 'rails', '3.1.0'
+rails_30 = ENV['RAILS_VERSION'] && ENV['RAILS_VERSION'] =~ /^3\.0\.\d+$/
+
+gem 'rails', ENV['RAILS_VERSION'] || '3.1.0'
 
 # Bundle edge Rails instead:
 # gem 'rails',     :git => 'git://github.com/rails/rails.git'
 
+#gem 'jruby-rack', '1.1.0.dev'
 
 gem 'jruby-openssl'
 gem 'json'
@@ -16,7 +19,7 @@ group :assets do
   gem 'coffee-rails', "~> 3.1.0"
   gem 'uglifier'
   gem 'therubyrhino'
-end
+end unless rails_30
 
 gem 'jquery-rails'
 

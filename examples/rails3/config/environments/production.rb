@@ -12,17 +12,17 @@ Rails3::Application.configure do
   config.serve_static_assets = false
 
   # Fallback to assets pipeline if a precompiled asset is missed
-  config.assets.compile = true
+  config.assets.compile = true if Rails::VERSION::MINOR > 0
 
   # Compress JavaScripts and CSS
-  config.assets.compress = true
+  config.assets.compress = true if Rails::VERSION::MINOR > 0
 
   # Customize your compressors
   # config.assets.js_compressor = :closure
   # config.assets.css_compressor = :yui
 
   # Generate digests for assets URLs
-  config.assets.digest = true
+  config.assets.digest = true if Rails::VERSION::MINOR > 0
 
   # Defaults to Rails.root.join("public/assets")
   # config.assets.manifest = YOUR_PATH
