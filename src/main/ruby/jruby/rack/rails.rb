@@ -170,7 +170,13 @@ module JRuby::Rack
 
       def to_app
         load_environment
-        ::Rails.application
+        app = ::Rails.application
+        
+        puts "\n"
+        puts "[app] LOAD_PATH:"; $LOAD_PATH.each { |p| puts p }
+        puts "\n"
+        
+        app
       end
     end
   end

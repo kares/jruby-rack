@@ -18,6 +18,14 @@ module JRuby::Rack
     def boot!
       adjust_load_path
       ENV['RACK_ENV'] = @rack_env
+      
+      puts "\n"
+      puts "[boot] GEM_HOME: #{ENV['GEM_HOME']}"
+      puts "[boot] GEM_PATH: #{ENV['GEM_PATH']}"
+      puts "[boot] layout.gem_path: #{layout.gem_path} (#{layout.class.name})"
+      puts "[boot] LOAD_PATH:"; $LOAD_PATH.each { |p| puts p }
+      puts "\n"
+      
       if ENV['GEM_PATH']
         ENV['GEM_PATH'] = layout.gem_path + File::PATH_SEPARATOR + ENV['GEM_PATH']
       else
