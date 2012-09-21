@@ -210,5 +210,47 @@ module JRuby
         end
       end
     end
+    
+    class AsyncResponse < Response
+      
+      def initialize(context)
+        raise "no context given" unless context
+        @async_context = context
+      end
+      
+      def handle(rack_response)
+        @status, @headers, @body = *rack_response
+        
+        unless response.committed?
+          write_status(response) if @status && @status.respond_to?(:'>') && @status > 0
+          write_headers(response) if @headers
+        end
+        write_body(response) if @body
+      rescue => e
+        log_error(e)
+        raise e
+      end
+      
+      def responded?
+        !!@response
+      end
+      
+      def response
+        @response ||= @async_context.response
+      end
+      
+      def respond(response)
+        @response = response
+        notify
+      end
+      
+      private
+      
+      def log_error(e)
+        puts "async handle error: #{e.inspect}"
+        e.backtrace.each { |b| puts b }
+      end
+      
+    end
   end
 end
