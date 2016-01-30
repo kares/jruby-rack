@@ -6,7 +6,7 @@ GEM
       rake
     diff-lcs (1.2.5)
     rack (1.6.0)
-    rake (10.3.2)
+    rake (10.4.2)
     rspec (2.14.1)
       rspec-core (~> 2.14.0)
       rspec-expectations (~> 2.14.0)
@@ -22,5 +22,5 @@ PLATFORMS
 DEPENDENCIES
   appraisal (< 1.0)
   rack
-  rake (~> 10.3.1)
+  rake (~> 10.4.2)
   rspec (~> 2.14.1)

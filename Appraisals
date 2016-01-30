@@ -7,10 +7,12 @@ appraise "rails30" do
 end
 
 appraise "rails31" do
+  gem "i18n", "< 0.7"
   gem "rails", "~> 3.1.12"
 end
 
 appraise "rails32" do
+  gem "i18n", "< 0.7"
   gem "rails", "~> 3.2.21"
 end
 
@@ -19,14 +21,15 @@ appraise "rails40" do
 end
 
 appraise "rails41" do
-  gem "rails", "~> 4.1.10"
+  gem "rails", "~> 4.1.11"
 end
 
 appraise "rails42" do
-  gem "rails", "~> 4.2.1"
+  gem "rails", "~> 4.2.5"
 end
 
 appraise "railsNG" do
-  gem 'rails', :github => 'rails/rails', :branch => 'master'
-  gem 'arel', :github => 'rails/arel', :branch => 'master'
+  gem 'rails', "5.0.0.beta1"
+  #gem 'rails', :github => 'rails/rails', :branch => 'master'
+  #gem 'arel', :github => 'rails/arel', :branch => 'master'
 end
