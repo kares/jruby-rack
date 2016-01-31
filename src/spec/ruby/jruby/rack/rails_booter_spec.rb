@@ -98,18 +98,11 @@ describe JRuby::Rack::RailsBooter do
     rails_booter.public_path.should == "."
   end
 
-<<<<<<< HEAD
   it "uses JRuby-Rack's logger by default" do
     booter.boot!
     expect( booter.logger ).to_not be nil
     expect( booter.logger ).to be JRuby::Rack.logger
     booter.logger.info 'hello-there'
-=======
-  it "should create a log device that writes messages to the servlet context" do
-    rails_booter.boot!
-    @rack_context.should_receive(:log).with(/hello/)
-    booter.logger.instance_variable_get(:@logdev).write "hello"
->>>>>>> 1.1-stable
   end
 
   it "detects 2.3" do
