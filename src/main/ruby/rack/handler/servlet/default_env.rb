@@ -19,16 +19,9 @@ module Rack
       # ServletRequest input stream to be not read (e.g. for POSTs).
       class DefaultEnv < Hash # The environment must be an instance of Hash !
 
-        BUILTINS = Rack.release < '3' ?
-                     # rack 2.2.x
-                     Set.new(%w(rack.version rack.multithread rack.multiprocess rack.run_once
-                        rack.input rack.errors rack.url_scheme rack.hijack?
+        BUILTINS = Set.new(%w(rack.input rack.errors rack.url_scheme
                         java.servlet_request java.servlet_response java.servlet_context
-                        jruby.rack.context jruby.rack.version).map!(&:freeze)) :
-                     # rack 3.0 and later
-                     Set.new(%w(rack.input rack.errors rack.url_scheme rack.hijack?
-                        java.servlet_request java.servlet_response java.servlet_context
-                        jruby.rack.context jruby.rack.version).map!(&:freeze))
+                        jruby.rack.context).map!(&:freeze))
 
         VARIABLES = %w(CONTENT_TYPE CONTENT_LENGTH PATH_INFO QUERY_STRING
           REMOTE_ADDR REMOTE_HOST REMOTE_USER REQUEST_METHOD REQUEST_URI
@@ -112,7 +105,7 @@ module Rack
 
         # @private
         DEFAULT = Object.new
-        private_constant :DEFAULT rescue nil
+        private_constant :DEFAULT
 
         alias_method '_fetch', :fetch; private '_fetch' # Hash#fetch
         def fetch(key, default = DEFAULT, &block)
@@ -225,7 +218,7 @@ module Rack
             when 'SERVER_SOFTWARE' then env[key] = rack_context.getServerInfo
             else
               # NOTE: even though we allowed for overrides and loaded all attributes
-              # up front (looping thru getAttributeNames) container "hidden" attribs
+              # up front (looping through getAttributeNames) container "hidden" attrs
               # might still get resolved e.g. 'org.apache.tomcat.sendfile.support'
               if hidden_attr = @servlet_env.getAttribute(key)
                 env[key] = hidden_attr
@@ -236,27 +229,24 @@ module Rack
         end
 
         def load_builtin(env, key)
-          return nil unless BUILTINS.include?(key)
-
           case key
-          when 'rack.version'         then env[key] = ::Rack.release
-          when 'rack.multithread'     then env[key] = true
-          when 'rack.multiprocess'    then env[key] = false
-          when 'rack.run_once'        then env[key] = false
-          when 'rack.hijack?'         then env[key] = false
-          when 'rack.input'           then
+          when 'rack.input'
             env[key] = @servlet_env ? JRuby::Rack::Input.new(@servlet_env) : nil
-          when 'rack.errors'          then context = rack_context
+          when 'rack.errors'
+            context = rack_context
             env[key] = context ? JRuby::Rack::ServletLog.new(context) : nil
           when 'rack.url_scheme'
             env[key] = scheme = @servlet_env ? @servlet_env.getScheme : nil
             env['HTTPS'] = 'on' if scheme == 'https'
             scheme
-          when 'java.servlet_request'  then env[key] = servlet_request
-          when 'java.servlet_response' then env[key] = servlet_response
-          when 'java.servlet_context' then env[key] = servlet_context
-          when 'jruby.rack.context'   then env[key] = rack_context
-          when 'jruby.rack.version'   then env[key] = JRuby::Rack::VERSION
+          when 'java.servlet_request'
+            env[key] = servlet_request
+          when 'java.servlet_response'
+            env[key] = servlet_response
+          when 'java.servlet_context'
+            env[key] = servlet_context
+          when 'jruby.rack.context'
+            env[key] = rack_context
           else
             nil
           end
@@ -300,6 +290,7 @@ module Rack
           'java.servlet_request', 'java.servlet_response',
           'java.servlet_context', 'jruby.rack.context'
         ]
+        private_constant :TRANSIENT_KEYS
 
         def marshal_dump
           hash = to_hash(true)
