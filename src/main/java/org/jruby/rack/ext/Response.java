@@ -486,6 +486,9 @@ public class Response extends RubyObject implements RackResponse {
 
         IOException getIOCause() { return (IOException) getCause(); }
 
+        @Override
+        public Throwable fillInStackTrace() { return this; }
+
     }
 
     /**
@@ -501,9 +504,6 @@ public class Response extends RubyObject implements RackResponse {
     @JRubyMethod(name = "send_file")
     public IRubyObject send_file(final ThreadContext context,
         final IRubyObject path, final IRubyObject response) throws IOException {
-        // NOTE: That this is not related to `Rack::Sendfile` support, since if you
-        // have configured *sendfile.type* (e.g. to Apache's "X-Sendfile") this part
-        // would not have been executing at all.
         final RackResponseEnvironment servletResponse =
             (RackResponseEnvironment) response.toJava(Object.class);
         final FileInputStream input = new FileInputStream( path.asString().toString() );
