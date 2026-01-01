@@ -40,7 +40,7 @@ module Rack
       def self.response; @@response ||= JRuby::Rack::Response; end
 
       def self.response=(klass)
-        if klass && ! klass.is_a?(Module)
+        if klass && !klass.is_a?(Module)
           klass = JRuby::Rack::Helpers.resolve_constant(klass, JRuby::Rack)
         end
         @@response = klass

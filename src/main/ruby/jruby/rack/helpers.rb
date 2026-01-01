@@ -129,14 +129,15 @@ module JRuby
         begin
           constantize(camel_cased_name, context)
         rescue NameError => e
+          cause = nil
           begin
             required = true
             require underscore(camel_cased_name)
             retry
           rescue LoadError => le
-            e.message = "#{e.message} (#{le.message})"
+            cause = le
           end unless required
-          raise e
+          raise e, cause: cause
         end
       end
       
