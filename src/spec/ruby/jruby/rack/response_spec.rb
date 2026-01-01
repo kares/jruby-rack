@@ -7,7 +7,6 @@
 #++
 
 require File.expand_path('spec_helper', File.dirname(__FILE__) + '/../..')
-require 'jruby/rack/response'
 
 describe JRuby::Rack::Response do
 
@@ -151,91 +150,6 @@ describe JRuby::Rack::Response do
       expect(response.chunked?).to be true
 
       response.write_body(response_environment)
-    end
-
-    it "dechunks the body when a chunked response is detected",
-       :lib => [:rails23, :rails31, :rails32, :rails40] do
-      require 'rack/chunked'
-
-      headers = {
-        "Cache-Control" => 'no-cache',
-        "Transfer-Encoding" => 'chunked'
-      }
-      body = [
-        "1".freeze,
-        "\nsecond chunk",
-        "a multi\nline chunk \n42",
-        "utf-8 chunk 'ty píčo'!\n",
-        "terminated chunk\r\n",
-        "", # should be skipped
-        "\r\nthe very\r\n last\r\n\r\n chunk"
-      ]
-
-      with_dechunk do
-        body = Rack::Chunked::Body.new body
-        response = JRuby::Rack::Response.new([200, headers, body])
-        response.write_headers(response_environment)
-
-        times = 0
-        expect(stream).to receive(:write).exactly(6).times do |bytes|
-          str = String.from_java_bytes(bytes)
-          str = str.force_encoding('UTF-8') if str.respond_to?(:force_encoding)
-          case times += 1
-          when 1 then expect(str).to eq "1"
-          when 2 then expect(str).to eq "\nsecond chunk"
-          when 3 then expect(str).to eq "a multi\nline chunk \n42"
-          when 4 then expect(str).to eq "utf-8 chunk 'ty píčo'!\n"
-          when 5 then expect(str).to eq "terminated chunk\r\n"
-          when 6 then expect(str).to eq "\r\nthe very\r\n last\r\n\r\n chunk"
-          else
-            fail("unexpected :write received with #{str.inspect}")
-          end
-        end
-        expect(stream).to receive(:flush).exactly(6 + 1).times # +1 for tail chunk
-
-        response.write_body(response_environment)
-      end
-    end
-
-    it "does not dechunk body when dechunkins is turned off",
-       :lib => [:rails31, :rails32, :rails40] do
-      dechunk = JRuby::Rack::Response.dechunk?
-      begin
-        JRuby::Rack::Response.dechunk = false
-
-        require 'rack/chunked'
-        headers = {
-          "Cache-Control" => 'no-cache',
-          "Transfer-Encoding" => 'chunked'
-        }
-        body = [
-          "1".freeze,
-          "\nsecond chunk",
-          ""
-        ]
-        body = Rack::Chunked::Body.new body
-        response = JRuby::Rack::Response.new([200, headers, body])
-
-        response.write_headers(response_environment)
-
-        times = 0
-        expect(stream).to receive(:write).exactly(3).times do |bytes|
-          str = String.from_java_bytes(bytes)
-          case times += 1
-          when 1 then expect(str).to eq "1\r\n1\r\n"
-          when 2 then expect(str).to eq "d\r\n\nsecond chunk\r\n"
-          when 3 then expect(str).to eq "0\r\n\r\n"
-          else
-            fail("unexpected :write received with #{str.inspect}")
-          end
-        end
-        expect(stream).to receive(:flush).exactly(3).times
-
-        response.write_body(response_environment)
-
-      ensure
-        JRuby::Rack::Response.dechunk = dechunk
-      end
     end
 
     it "handles dechunking gracefully when body is not chunked" do
@@ -520,16 +434,6 @@ describe JRuby::Rack::Response do
     end
 
     private
-
-    def with_dechunk(dechunk = true)
-      begin
-        prev_dechunk = JRuby::Rack::Response.dechunk?
-        JRuby::Rack::Response.dechunk = dechunk
-        yield
-      ensure
-        JRuby::Rack::Response.dechunk = prev_dechunk
-      end
-    end
 
     def with_swallow_client_abort(client_abort = true)
       begin

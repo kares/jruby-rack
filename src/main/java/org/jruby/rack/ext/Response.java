@@ -101,37 +101,6 @@ public class Response extends RubyObject implements RackResponse {
         return value;
     }
 
-    protected static Boolean dechunk; // null means not set
-
-    /**
-     * Whether responses should de-chunk data (when chunked response detected).
-     * @param context the current ThreadContext
-     * @param self the self object
-     * @return a ruby boolean
-     */
-    @JRubyMethod(name = "dechunk?", meta = true)
-    public static IRubyObject is_dechunk(final ThreadContext context, final IRubyObject self) {
-        if ( dechunk == null ) return context.nil;
-        return context.runtime.newBoolean(dechunk);
-    }
-
-    /**
-     * @see Response#is_dechunk(ThreadContext, IRubyObject)
-     * @param self the self object
-     * @param value the value
-     * @return the given value
-     */
-    @JRubyMethod(name = "dechunk=", meta = true, required = 1)
-    public static IRubyObject set_dechunk(final IRubyObject self, final IRubyObject value) {
-        if ( value instanceof RubyBoolean ) {
-            dechunk = value.isTrue();
-        }
-        else {
-            dechunk = ! value.isNil();
-        }
-        return value;
-    }
-
     private static Integer channelChunkSize = 32 * 1024 * 1024; // 32 MB
 
     /**
@@ -364,7 +333,7 @@ public class Response extends RubyObject implements RackResponse {
 
     private static final ByteList NEW_LINE = new ByteList(new byte[] { '\n' }, false);
 
-    protected void writeHeaders(final RackResponseEnvironment response) throws IOException {
+    protected void writeHeaders(final RackResponseEnvironment response) {
         this.headers.visitAll(getRuntime().getCurrentContext(), new RubyHash.Visitor() { // headers.each { |key, val| }
             @Override
             public void visit(final IRubyObject key, final IRubyObject val) {
@@ -473,38 +442,30 @@ public class Response extends RubyObject implements RackResponse {
                 }
                 return;
             }
-            // NOTE: we no longer handle "to_inputstream" since in 1.7 "to_channel" covers those ...
 
             final OutputStream output = response.getOutputStream();
             final ThreadContext context = currentContext();
-            IOException error = null;
-            if ( doDechunk() ) {
-                final IRubyObject output_stream = JavaUtil.convertJavaToRuby(context.runtime, output);
-                callMethod(context, "write_body_dechunked", output_stream);
-            }
-            else {
-                final String method = body.respondsTo("each_line") ? "each_line" : "each";
-                try {
-                    invoke(context, body, method,
-                        new JavaInternalBlockBody(context.runtime, Signature.ONE_REQUIRED) {
-                        @Override
-                        public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
-                            return this.yield(context, args[0]);
-                        }
+            final String method = body.respondsTo("each_line") ? "each_line" : "each";
+            try {
+                invoke(context, body, method,
+                    new JavaInternalBlockBody(context.runtime, Signature.ONE_REQUIRED) {
+                    @Override
+                    public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
+                        return this.yield(context, args[0]);
+                    }
 
-                        @Override
-                        public IRubyObject yield(ThreadContext context, IRubyObject line) {
-                            try {
-                                output.write( line.asString().getBytes() );
-                                if ( doFlush() ) output.flush();
-                            }
-                            catch (IOException e) { throw new WrappedException(e); }
-                            return context.nil;
+                    @Override
+                    public IRubyObject yield(ThreadContext context, IRubyObject line) {
+                        try {
+                            output.write( line.asString().getBytes() );
+                            if ( doFlush() ) output.flush();
                         }
-                    });
-                }
-                catch (WrappedException e) { throw e.getIOCause(); }
+                        catch (IOException e) { throw new WrappedException(e); }
+                        return context.nil;
+                    }
+                });
             }
+            catch (WrappedException e) { throw e.getIOCause(); }
         }
         catch (IOException | RuntimeException e) { if ( ! handledAsClientAbort(e) ) throw e; }
         finally {
@@ -583,13 +544,6 @@ public class Response extends RubyObject implements RackResponse {
         return chunked = Boolean.FALSE;
     }
 
-    /**
-     * @return whether de-chunking (a chunked Rack response) should be performed
-     */
-    protected boolean doDechunk() {
-        return dechunk == Boolean.TRUE && isChunked();
-    }
-
     @JRubyMethod(name = "flush?")
     public IRubyObject flush_p(final ThreadContext context) {
         return context.runtime.newBoolean( doFlush() );
@@ -636,7 +590,6 @@ public class Response extends RubyObject implements RackResponse {
     private static final ByteList CHUNKED = new ByteList(new byte[] { 'c','h','u','n','k','e','d' }, false);
 
     private boolean skipEncodingHeader(final IRubyObject value) {
-        if ( dechunk == Boolean.FALSE ) return false;
         if ( value instanceof RubyString ) {
             return ( (RubyString) value ).getByteList().equal(CHUNKED);
         }

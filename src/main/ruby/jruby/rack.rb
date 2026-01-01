@@ -63,7 +63,6 @@ end
 require 'jruby/rack/version' unless defined? JRuby::Rack::VERSION
 require 'jruby/rack/helpers'
 require 'jruby/rack/booter'
-require 'jruby/rack/response'
 require 'jruby/rack/servlet_ext'
 require 'jruby/rack/core_ext'
 
